@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor.mysqlcheck import MySQLCheckLib
+from leapp.libraries.actor.mysqlcheck import report_installed_packages
 from leapp.models import DistributionSignedRPM, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -17,5 +17,4 @@ class MySQLCheck(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self):
-        lib = MySQLCheckLib()
-        lib.report_installed_packages()
+        report_installed_packages()
