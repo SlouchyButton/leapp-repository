@@ -1,7 +1,7 @@
 from leapp import reporting
-from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api
-from leapp.models import DistributionSignedRPM
+from leapp.models import MySQLConfiguration
+from leapp.exceptions import StopActorExecutionError
 
 import subprocess
 
@@ -31,7 +31,7 @@ REMOVED_ARGS = [
 report_server_inst_link_url = 'https://access.redhat.com/articles/7099234'
 
 
-def _generate_mysql_present_report():
+def _generate_mysql_present_report() -> None:
     """
     Create report on mysql-server package installation detection.
 
@@ -66,7 +66,7 @@ def _generate_mysql_present_report():
         ])
 
 
-def _generate_deprecated_config_report(found_options, found_arguments):
+def _generate_deprecated_config_report(found_options, found_arguments) -> None:
     """
     Create report on mysql-server deprecated configuration.
 
@@ -134,7 +134,7 @@ def _generate_deprecated_config_report(found_options, found_arguments):
         ])
 
 
-def _generate_report(found_options, found_arguments):
+def _generate_report(found_options, found_arguments) -> None:
     """
     Create report on mysql-server package installation detection.
 
@@ -149,64 +149,14 @@ def _generate_report(found_options, found_arguments):
         _generate_mysql_present_report()
 
 
-def _check_incompatible_config():
-    """
-    Get incompatible configuration options. Since MySQL can have basically
-    unlimited number of config files that can link to one another, most
-    convenient way is running `mysqld` command with `--validate-config 
-    --log-error-verbosity=2` arguments. Validate config only validates the
-    config, without starting the MySQL server. Verbosity=2 is required to show
-    deprecated options - which are removed after upgrade.
+def process() -> None:
+    msg = next(api.consume(MySQLConfiguration), None)
+    if not msg:
+        raise StopActorExecutionError('Expected MySQLConfiguration, but got None')
 
-    Example output:
-    2024-12-18T11:40:04.725073Z 0 [Warning] [MY-011069] [Server]
-    The syntax '--old' is deprecated and will be removed in a future release.
-    """
-    # mysqld --validate-config --log-error-verbosity=2
-    # 2024-12-18T11:40:04.725073Z 0 [Warning] [MY-011069] [Server]
-    # The syntax '--old' is deprecated and will be removed in a future release.
-
-    found_options = set()
-    out = subprocess.run(['mysqld', '--validate-config', '--log-error-verbosity=2'],
-                         capture_output=True,
-                         check=False)
-
-    stderr = out.stderr.decode("utf-8")
-    if 'deprecated' in stderr:
-        found_options = {arg for arg
-                         in REMOVED_ARGS
-                         if arg in stderr}
-    return found_options
-
-
-def _check_incompatible_launch_param():
-    """
-    Get incompatible launch parameters from systemd service override file
-    located at /etc/systemd/system/mysqld.service.d/override.conf
-    """
-
-    found_arguments = set()
-    try:
-        with open('/etc/systemd/system/mysqld.service.d/override.conf') as f:
-            file_content = f.read()
-            found_arguments = {arg for arg
-                               in REMOVED_ARGS
-                               if arg in file_content}
-    except OSError:
-        # File probably doesn't exist, ignore it and pass
-        pass
-
-    return found_arguments
-
-
-def report_installed_packages(_context=api):
-    """
-    Create reports according to detected MySQL packages.
-
-    Create the report if the mysql-server rpm (RH signed) is installed.
-    """
-
-    if has_package(DistributionSignedRPM, 'mysql-server', context=_context):
-        found_options = _check_incompatible_config()
-        found_arguments = _check_incompatible_launch_param()
-        _generate_report(found_options, found_arguments)
+    if msg.mysql_present:
+        _generate_report(msg.removed_options, msg.removed_arguments)
+    else:
+        api.current_logger().debug(
+            'mysql-server package not found, no report generated'
+        )
