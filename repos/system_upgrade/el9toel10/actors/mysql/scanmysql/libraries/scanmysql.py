@@ -1,6 +1,6 @@
 from leapp.models import DistributionSignedRPM, MySQLConfiguration
 from leapp.libraries.common.rpms import has_package
-from leapp.libraries.stdlib import api
+from leapp.libraries.stdlib import api, run
 
 import subprocess
 
@@ -43,11 +43,9 @@ def _check_incompatible_config() -> set[str]:
     """
 
     found_options = set()
-    out = subprocess.run(['mysqld', '--validate-config', '--log-error-verbosity=2'],
-                         capture_output=True,
-                         check=False)
+    stderr = run(['mysqld', '--validate-config', '--log-error-verbosity=2'],
+                 checked=False)['stderr']
 
-    stderr = out.stderr.decode("utf-8")
     if 'deprecated' in stderr:
         found_options = {arg for arg
                          in REMOVED_ARGS
