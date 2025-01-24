@@ -28,7 +28,7 @@ REMOVED_ARGS = [
 ]
 
 # Link URL for mysql-server report
-report_server_inst_link_url = 'https://access.redhat.com/articles/7099234'
+REPORT_SERVER_INST_LINK_URL = 'https://access.redhat.com/articles/7099234'
 
 
 def _generate_mysql_present_report() -> None:
@@ -55,7 +55,7 @@ def _generate_mysql_present_report() -> None:
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.SERVICES]),
         reporting.ExternalLink(title='Migrating MySQL databases from RHEL 9 to RHEL 10',
-                               url=report_server_inst_link_url),
+                               url=REPORT_SERVER_INST_LINK_URL),
         reporting.RelatedResource('package', 'mysql-server'),
         reporting.Remediation(hint=(
             'Dump or backup your data before proceeding with the upgrade '
@@ -66,7 +66,8 @@ def _generate_mysql_present_report() -> None:
         ])
 
 
-def _generate_deprecated_config_report(found_options, found_arguments) -> None:
+def _generate_deprecated_config_report(found_options: set | list,
+                                       found_arguments: set | list) -> None:
     """
     Create report on mysql-server deprecated configuration.
 
@@ -120,7 +121,7 @@ def _generate_deprecated_config_report(found_options, found_arguments) -> None:
         reporting.Severity(reporting.Severity.MEDIUM),
         reporting.Groups([reporting.Groups.SERVICES]),
         reporting.ExternalLink(title='Migrating MySQL databases from RHEL 9 to RHEL 10',
-                               url=report_server_inst_link_url),
+                               url=REPORT_SERVER_INST_LINK_URL),
         reporting.RelatedResource('package', 'mysql-server'),
         reporting.Remediation(hint=(
             'To ensure smooth upgrade process it is strongly recommended to '
@@ -134,7 +135,7 @@ def _generate_deprecated_config_report(found_options, found_arguments) -> None:
         ])
 
 
-def _generate_report(found_options, found_arguments) -> None:
+def _generate_report(found_options: set | list, found_arguments: set | list) -> None:
     """
     Create report on mysql-server package installation detection.
 
@@ -150,7 +151,7 @@ def _generate_report(found_options, found_arguments) -> None:
 
 
 def process() -> None:
-    msg = next(api.consume(MySQLConfiguration), None)
+    msg: MySQLConfiguration = next(api.consume(MySQLConfiguration), None)
     if not msg:
         raise StopActorExecutionError('Expected MySQLConfiguration, but got None')
 
