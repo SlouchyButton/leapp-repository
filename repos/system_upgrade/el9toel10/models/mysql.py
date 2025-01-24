@@ -9,10 +9,9 @@ class MySQLConfiguration(Model):
 
     topic = SystemInfoTopic
 
+    # True in case mysql-server package was found on the system
     mysql_present = fields.Boolean(default=False)
 
-    """
-    Configured options which are removed in RHEL 10 MySQL
-    """
+    # Configured options which are removed in RHEL 10 MySQL
     removed_options = fields.List(fields.String(), default=[])
     removed_arguments = fields.List(fields.String(), default=[])

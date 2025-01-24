@@ -1,5 +1,5 @@
 from leapp.actors import Actor
-from leapp.libraries.actor import mysqlcheck
+from leapp.libraries.actor import checkmysql
 from leapp.models import MySQLConfiguration, Report
 from leapp.tags import ChecksPhaseTag, IPUWorkflowTag
 
@@ -23,4 +23,4 @@ class MySQLCheck(Actor):
     tags = (ChecksPhaseTag, IPUWorkflowTag)
 
     def process(self) -> None:
-        mysqlcheck.process()
+        checkmysql.process()

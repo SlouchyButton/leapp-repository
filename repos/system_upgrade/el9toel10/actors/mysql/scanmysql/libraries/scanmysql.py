@@ -1,8 +1,12 @@
-from leapp.models import DistributionSignedRPM, MySQLConfiguration
+from leapp.models import DistributionSignedRPM
 from leapp.libraries.common.rpms import has_package
 from leapp.libraries.stdlib import api, run
 
-import subprocess
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from repos.system_upgrade.el9toel10.models.mysql import MySQLConfiguration
+else:
+    from leapp.models import MySQLConfiguration
 
 # https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html
 # https://dev.mysql.com/doc/refman/8.0/en/server-options.html
@@ -23,6 +27,8 @@ REMOVED_ARGS = [
     '--character-set-client-handshake',
     '--old-style-user-limits',
 ]
+
+SERVICE_OVERRIDE_PATH = '/etc/systemd/system/mysqld.service.d/override.conf'
 
 
 def _check_incompatible_config() -> set[str]:
@@ -64,7 +70,7 @@ def _check_incompatible_launch_param() -> set[str]:
 
     found_arguments = set()
     try:
-        with open('/etc/systemd/system/mysqld.service.d/override.conf') as f:
+        with open(SERVICE_OVERRIDE_PATH) as f:
             file_content = f.read()
             found_arguments = {arg for arg
                                in REMOVED_ARGS
@@ -87,8 +93,8 @@ def check_status(_context=api) -> MySQLConfiguration:
 
     mysql_present = has_package(DistributionSignedRPM, 'mysql-server', context=_context)
 
-    found_options = None
-    found_arguments = None
+    found_options = []
+    found_arguments = []
     if mysql_present:
         found_options = list(_check_incompatible_config())
         found_arguments = list(_check_incompatible_launch_param())

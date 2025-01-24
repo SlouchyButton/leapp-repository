@@ -3,7 +3,11 @@ from leapp.libraries.stdlib import api
 from leapp.models import MySQLConfiguration
 from leapp.exceptions import StopActorExecutionError
 
-import subprocess
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from repos.system_upgrade.el9toel10.models.mysql import MySQLConfiguration
+else:
+    from leapp.models import MySQLConfiguration
 
 FMT_LIST_SEPARATOR = '\n    - '
 
